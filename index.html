@@ -1,0 +1,149 @@
+<!doctype html>
+<!--
+  index.html — Shell principal de VBT Lab.
+  SPA 100% client-side. Router por hash. Tailwind via CDN.
+  Cada módulo se monta en <main id="app"> bajo demanda.
+-->
+<html lang="es" class="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VBT Lab — Entrenamiento basado en velocidad</title>
+    <meta name="description" content="Laboratorio digital para evaluación neuromuscular mediante velocidad de ejecución. Implementa las prácticas 3-7 del manual de la Universidad de Almería." />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+
+    <!-- Tema antes de Tailwind para evitar parpadeo -->
+    <script>
+      (function () {
+        try {
+          const stored = localStorage.getItem('vbt:theme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const dark = stored ? stored === 'dark' : prefersDark;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- Tailwind CDN con configuración inline -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+              mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace']
+            }
+          }
+        }
+      };
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    />
+
+    <link rel="stylesheet" href="css/styles.css" />
+
+    <!-- Librerías científicas -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@12.4.0/lib/browser/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased min-h-screen flex flex-col">
+    <!-- ====================== HEADER ====================== -->
+    <header
+      class="sticky top-0 z-40 backdrop-blur bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 print:hidden"
+    >
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
+        <a href="#perfil" class="flex items-center gap-2 group">
+          <span
+            class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-white font-bold shadow-sm group-hover:scale-105 transition"
+            >V</span
+          >
+          <span class="flex flex-col leading-tight">
+            <span class="font-bold text-lg tracking-tight">VBT Lab</span>
+            <span class="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 hidden sm:block"
+              >Entrenamiento basado en velocidad — laboratorio digital</span
+            >
+          </span>
+        </a>
+
+        <nav id="nav" class="hidden md:flex flex-1 justify-center gap-1 text-sm font-medium">
+          <a data-route="perfil"   href="#perfil"   class="nav-link">Perfil C-V</a>
+          <a data-route="rm"       href="#rm"       class="nav-link">1RM</a>
+          <a data-route="esfuerzo" href="#esfuerzo" class="nav-link">Esfuerzo</a>
+          <a data-route="mnr"      href="#mnr"      class="nav-link">MNR</a>
+          <a data-route="rir"      href="#rir"      class="nav-link">RIR</a>
+          <a data-route="refs"     href="#refs"     class="nav-link">📚 Refs</a>
+        </nav>
+
+        <div class="flex items-center gap-2 ml-auto">
+          <button
+            id="theme-toggle"
+            type="button"
+            aria-label="Cambiar tema"
+            class="rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            <span class="hidden dark:inline">☀️</span><span class="dark:hidden">🌙</span>
+          </button>
+          <select
+            id="lang"
+            aria-label="Idioma"
+            class="hidden sm:block bg-transparent border border-slate-300 dark:border-slate-700 rounded-lg text-xs px-2 py-1"
+          >
+            <option value="es" selected>ES</option>
+            <option value="en" disabled>EN (TODO)</option>
+          </select>
+          <button
+            id="nav-burger"
+            class="md:hidden rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Abrir navegación"
+          >
+            ☰
+          </button>
+        </div>
+      </div>
+
+      <!-- Nav móvil -->
+      <nav id="nav-mobile" class="md:hidden hidden border-t border-slate-200 dark:border-slate-800 px-4 py-2 flex-col gap-1 text-sm">
+        <a data-route="perfil"   href="#perfil"   class="nav-link block">Perfil C-V</a>
+        <a data-route="rm"       href="#rm"       class="nav-link block">Estimador 1RM</a>
+        <a data-route="esfuerzo" href="#esfuerzo" class="nav-link block">Grado de esfuerzo</a>
+        <a data-route="mnr"      href="#mnr"      class="nav-link block">Predicción MNR</a>
+        <a data-route="rir"      href="#rir"      class="nav-link block">Calculadora RIR</a>
+        <a data-route="refs"     href="#refs"     class="nav-link block">📚 Referencias</a>
+      </nav>
+    </header>
+
+    <!-- ====================== MAIN ====================== -->
+    <main id="app" class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8" aria-live="polite">
+      <!-- Inyectado por js/app.js según ruta -->
+    </main>
+
+    <!-- ====================== FOOTER ====================== -->
+    <footer
+      class="border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 py-6 px-4 print:hidden"
+    >
+      <div class="max-w-6xl mx-auto flex flex-col sm:flex-row gap-2 justify-between items-start sm:items-center">
+        <p>
+          © 2026 VBT Lab — basado en el manual de la Universidad de Almería
+          (<em>edUAL Textos Docentes 158</em>).
+        </p>
+        <p>
+          <a class="underline hover:text-indigo-500" href="https://github.com/" target="_blank" rel="noopener">Repositorio</a>
+          ·
+          <span>Herramienta educativa, no sustituye criterio profesional.</span>
+        </p>
+      </div>
+    </footer>
+
+    <!-- ====================== TOAST CONTAINER ====================== -->
+    <div id="toast" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 print:hidden"></div>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
