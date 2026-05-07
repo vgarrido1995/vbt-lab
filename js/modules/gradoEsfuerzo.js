@@ -165,6 +165,12 @@ function resultadosCard(container) {
       : '';
   }
 
+  function predict(pv) {
+    const v = r.a * pv * pv + r.b * pv + r.c;
+    return Math.max(0, Math.min(100, v));
+  }
+  repValue.textContent = `${formatDecimal(predict(state.predictPV), 1)} %`;
+
   const predictor = h('div', { class: 'mt-6 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/20 p-5' }, [
     h('h3', { class: 'font-semibold mb-3' }, 'Predictor de %Rep en tiempo real'),
     h('div', { class: 'flex items-end justify-between mb-2' }, [
@@ -175,12 +181,7 @@ function resultadosCard(container) {
       ])
     ]),
     slider,
-    extrapWarniv', { class: 'text-right' }, [
-        h('div', { class: 'text-xs uppercase tracking-wider text-slate-500' }, '%Rep estimado'),
-        repValue
-      ])
-    ]),
-    slider
+    extrapWarn
   ]);
 
   const canvas = h('canvas', { class: 'block', height: 360 });
