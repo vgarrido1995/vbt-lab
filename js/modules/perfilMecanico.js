@@ -30,12 +30,24 @@ let state = { rows: [], result: null };
 let chart = null;
 
 export function mount(container) {
-  state = store.get(KEY) || { rows: nuevasFilas(4), result: null };
+  state = store.get(KEY) || { rows: nuevasFilas(4), result: null, v: 2 };
   if (!state.rows || !state.rows.length) state.rows = nuevasFilas(4);
-  // Migración: estados antiguos guardaban {carga, vm}. Convertimos a {carga, intentos}.
-  state.rows = state.rows.map(r => r.intentos != null
-    ? r
-    : { carga: r.carga ?? '', intentos: r.vm != null && r.vm !== '' ? String(r.vm) : '' });
+  // Migración v1 → v2: si el estado guardado venía con {carga, vm} (un único intento)
+  // y coincide con el ejemplo antiguo del manual, lo reemplazamos por el nuevo
+  // ejemplo con varios intentos para que el usuario pueda ver el CV.
+  const eraEjemploAntiguo = state.v !== 2 && state.rows.length === EJEMPLO.length &&
+    state.rows.every((r, i) => Number(r.carga) === EJEMPLO[i].carga &&
+      Math.abs(Number(r.vm) - parseIntentos(EJEMPLO[i].intentos)[0]) < 1e-6);
+  if (eraEjemploAntiguo) {
+    state.rows = EJEMPLO.map(e => ({ carga: e.carga, intentos: e.intentos }));
+    state.result = null;
+  } else {
+    state.rows = state.rows.map(r => r.intentos != null
+      ? r
+      : { carga: r.carga ?? '', intentos: r.vm != null && r.vm !== '' ? String(r.vm) : '' });
+  }
+  state.v = 2;
+  persist();
   render(container);
 }
 
