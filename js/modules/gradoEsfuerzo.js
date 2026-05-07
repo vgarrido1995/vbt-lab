@@ -111,14 +111,21 @@ function calcular(container) {
   try { reg = polynomialRegression2(points); }
   catch (e) { showToast(e.message, 'error'); return; }
 
+  const pvObs = points.map(p => p.x);
+  const pvMin = Math.min(...pvObs), pvMax = Math.max(...pvObs);
   state.result = {
     points, vmax, N,
     a: reg.a, b: reg.b, c: reg.c, r2: reg.r2,
+    pvRange: [pvMin, pvMax],
     equation: `%Rep = ${reg.a.toFixed(4)}·(%PV)² + ${reg.b.toFixed(4)}·%PV + ${reg.c.toFixed(4)}`
   };
   persist();
   render(container);
+  // Sanity check: la curva debe ser monótona creciente en [0, pvMax]
+  const dAt = (x) => 2 * reg.a * x + reg.b;
+  const monotona = dAt(0) >= -1e-6 && dAt(pvMax) >= -1e-6;
   if (reg.r2 < 0.85) showToast('R² bajo (<0,85). Revisa la calidad de las repeticiones.', 'warn', 6000);
+  else if (!monotona) showToast('La curva ajustada no es monótona creciente — puede dar predicciones contraintuitivas. Revisa los datos.', 'warn', 7000);
   else showToast('Curva ajustada correctamente.', 'success');
 }
 
@@ -135,6 +142,7 @@ function resultadosCard(container) {
   const pvLabel = h('div', { class: 'text-xs uppercase tracking-wider text-slate-500' }, '%PV objetivo');
   const pvValue = h('div', { class: 'font-mono text-3xl tabular-nums' }, `${state.predictPV} %`);
   const repValue = h('div', { class: 'font-mono text-5xl font-bold tabular-nums text-indigo-600 dark:text-indigo-400' }, '');
+  const extrapWarn = h('div', { class: 'text-xs mt-1 text-amber-600 dark:text-amber-400' }, '');
   const slider = h('input', {
     type: 'range', min: '0', max: '60', step: '1', value: String(state.predictPV),
     class: 'w-full accent-indigo-600',
@@ -142,21 +150,32 @@ function resultadosCard(container) {
       state.predictPV = +e.target.value;
       pvValue.textContent = `${state.predictPV} %`;
       repValue.textContent = `${formatDecimal(predict(state.predictPV), 1)} %`;
+      const [lo, hi] = r.pvRange || [0, 60];
+      extrapWarn.textContent = (state.predictPV < lo || state.predictPV > hi)
+        ? `⚠ Extrapolación fuera del rango observado (${lo.toFixed(1)}–${hi.toFixed(1)} %PV).`
+        : '';
       persist();
     }
   });
 
-  function predict(pv) {
-    const v = r.a * pv * pv + r.b * pv + r.c;
-    return Math.max(0, Math.min(100, v));
+  {
+    const [lo, hi] = r.pvRange || [0, 60];
+    extrapWarn.textContent = (state.predictPV < lo || state.predictPV > hi)
+      ? `⚠ Extrapolación fuera del rango observado (${lo.toFixed(1)}–${hi.toFixed(1)} %PV).`
+      : '';
   }
-  repValue.textContent = `${formatDecimal(predict(state.predictPV), 1)} %`;
 
   const predictor = h('div', { class: 'mt-6 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/20 p-5' }, [
     h('h3', { class: 'font-semibold mb-3' }, 'Predictor de %Rep en tiempo real'),
     h('div', { class: 'flex items-end justify-between mb-2' }, [
       h('div', {}, [pvLabel, pvValue]),
       h('div', { class: 'text-right' }, [
+        h('div', { class: 'text-xs uppercase tracking-wider text-slate-500' }, '%Rep estimado'),
+        repValue
+      ])
+    ]),
+    slider,
+    extrapWarniv', { class: 'text-right' }, [
         h('div', { class: 'text-xs uppercase tracking-wider text-slate-500' }, '%Rep estimado'),
         repValue
       ])

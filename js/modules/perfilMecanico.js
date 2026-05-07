@@ -126,26 +126,28 @@ function calcular(container) {
   // Modelo: v = slope·L + intercept ; pendiente debe ser negativa
   const v0 = reg.intercept;
   const a  = reg.slope;
-  const L0 = -v0 / a; // = v0 / |a| cuando a<0
-  const Aline = (L0 * v0) / 2;
+  const valido = a < 0 && v0 > 0;
+  const L0 = valido ? -v0 / a : null; // = v0 / |a| cuando a<0
+  const Aline = valido ? (L0 * v0) / 2 : null;
   state.result = {
-    points, slope: a, intercept: v0, v0, L0, Aline, r2: reg.r2,
+    points, slope: a, intercept: v0, v0, L0, Aline, r2: reg.r2, valido,
     equation: `v = ${a.toFixed(4)}·L + ${v0.toFixed(4)}`
   };
   persist();
   render(container);
 
-  if (a >= 0) showToast('Pendiente positiva detectada — verifica que las velocidades disminuyan al aumentar la carga.', 'error', 6000);
+  if (!valido) showToast('Modelo no válido: la pendiente debe ser negativa y v₀ positivo. Revisa los datos (¿velocidad decreciente con la carga?).', 'error', 7000);
   else if (reg.r2 < 0.95) showToast('Linealidad débil (R² < 0,95); revisa puntos atípicos o repite la medición.', 'warn', 6000);
   else showToast('Perfil calculado correctamente.', 'success');
 }
 
 function resultadosCard(container) {
-  const r = state.result;
+  const fmt = (v, d) => v == null || !Number.isFinite(v) ? '—' : formatDecimal(v, d);
   const grid = h('div', { class: 'grid sm:grid-cols-2 lg:grid-cols-4 gap-4' }, [
-    statCard('v₀ (m/s)',          formatDecimal(r.v0, 2),    { hint: 'Intercepto eje Y. Velocidad máxima teórica — capacidad de velocidad pura.', accent: 'indigo' }),
-    statCard('L₀ (kg)',           formatDecimal(r.L0, 1),    { hint: 'Carga máxima teórica = v₀/|a|. Capacidad de fuerza pura.',                  accent: 'emerald' }),
-    statCard('A_line (kg·m/s)',   formatDecimal(r.Aline, 1), { hint: 'Área bajo la línea = L₀·v₀/2. Índice global del rendimiento mecánico.',     accent: 'amber' }),
+    statCard('v₀ (m/s)',          fmt(r.v0, 2),    { hint: 'Intercepto eje Y. Velocidad máxima teórica — capacidad de velocidad pura.', accent: 'indigo' }),
+    statCard('L₀ (kg)',           fmt(r.L0, 1),    { hint: 'Carga máxima teórica = v₀/|a|. Solo válido si la pendiente es negativa.',  accent: r.valido ? 'emerald' : 'rose' }),
+    statCard('A_line (kg·m/s)',   fmt(r.Aline, 1), { hint: 'Área bajo la línea = L₀·v₀/2. Índice global del rendimiento mecánico.',     accent: r.valido ? 'amber'   : 'rose' }),
+    statCard('R²',                fmt(r.Aline, 1), { hint: 'Área bajo la línea = L₀·v₀/2. Índice global del rendimiento mecánico.',     accent: 'amber' }),
     statCard('R²',                formatDecimal(r.r2, 3),    { hint: 'Bondad de ajuste. Aceptable si R² ≥ 0,95.',                                accent: r.r2 >= 0.95 ? 'emerald' : 'rose' })
   ]);
 
@@ -172,10 +174,11 @@ function resultadosCard(container) {
   ], 'mt-6');
 
   // Pintamos el chart después de que el canvas esté en el DOM
-  setTimeout(() => {
+  setonst xMax = (r.valido ? Math.max(r.L0, ...r.points.map(p => p.x)) : Math.max(...r.points.map(p => p.x))) * 1.05;
     chart = makeScatterWithRegression(canvas, {
       points: r.points,
       regressionFn: (x) => r.slope * x + r.intercept,
+      regressionRange: [0, xMax
       regressionRange: [0, Math.max(r.L0, ...r.points.map(p => p.x)) * 1.05],
       xLabel: 'Carga (kg)',
       yLabel: 'Velocidad media (m/s)',
@@ -197,8 +200,8 @@ function resumenMD(r) {
     ...r.points.map(p => `| ${p.x} | ${p.y.toFixed(3)} |`),
     '',
     `- **Ecuación:** ${r.equation}`,
-    `- **v₀:** ${r.v0.toFixed(2)} m/s`,
-    `- **L₀:** ${r.L0.toFixed(1)} kg`,
+    `- **v₀:** ${r.v0 == null ? '— (modelo no válido)' : r.L0.toFixed(1) + ' kg'}`,
+    `- **A_line:** ${r.Aline == null ? '— (modelo no válido)' : r.Aline.toFixed(1) + ' kg·m/s'}
     `- **A_line:** ${r.Aline.toFixed(1)} kg·m/s`,
     `- **R²:** ${r.r2.toFixed(3)}`
   ].join('\n');

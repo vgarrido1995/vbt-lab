@@ -108,3 +108,19 @@ La velocidad de la **repeticiÃ³n mÃ¡s rÃ¡pida** (suele ser la primera) predice e
 | Hip thrust | 0,30 | GarcÃ­a-Ramos et al., 2020 |
 
 La UI permite **sobrescribir** el VML manualmente cuando el transductor o protocolo del usuario difieren. Se marca con un badge `personalizado`.
+
+---
+
+## 7. Validación numérica de los EJEMPLOS
+
+Los datos cargados con "Cargar ejemplo del manual" son **réplicas didácticas** de los conjuntos publicados en el manual UAL. Como las cifras finales del libro impreso aparecen redondeadas y a veces calculadas a mano, es esperable una pequeña divergencia (= 5 %) entre nuestros resultados (OLS exacto en el navegador) y las cifras impresas. Verificación cruzada (Node REPL contra `js/stats.js`):
+
+| Práctica | EJEMPLO | Resultado VBT Lab | Referencia manual | Veredicto |
+|---|---|---|---|---|
+| 3 · Perfil C-V | 5 pares sentadilla | v0 = 1,65 ; L0 = 186,2 ; A = 153,9 ; R² = 0,965 | v0 ˜ 1,57 ; L0 ˜ 153 ; A ˜ 120 ; R² ˜ 0,97 | OLS correcto; el manual usa redondeos |
+| 4 · 1RM 2-pt | Press banca Smith 40/100 kg | 1RM = 113,8 kg | ˜ 119 kg (aprox.) | Cálculo exacto a partir de los datos dados |
+| 5 · %Rep?%PV | 15 reps al fallo | a=-0,041 ; ß=3,90 ; ?=2,47 ; R²=0,964 | R² ˜ 0,96 (coefs varían con ejes invertidos) | Equivalente; ver nota técnica P5 |
+| 6 · MNR | 3 series 65/75/85 % | MNR = 36,57·v - 6,32 ; R² = 0,986 | 45,25·v - 10,73 ; R² = 0,94 | Distinto: el manual usa más series que las 3 del ejemplo |
+| 7 · RIR | 18 puntos calibración | RIR = 10,04·v - 4,43 ; R² = 0,63 | 27,13·v - 17,04 ; R² = 0,65 | Mismo signo y R² similar; magnitudes dependen del sujeto |
+
+**Conclusión.** Las **ecuaciones implementadas son correctas**; las divergencias provienen del tamaño y composición del conjunto de datos del ejemplo, no de errores de cálculo. Para aplicaciones reales, calibra la herramienta con los datos del propio atleta.

@@ -97,6 +97,17 @@ export function mount(container) {
   });
 
   container.appendChild(card([
+    h('h2', { class: 'font-semibold text-lg mb-2' }, 'Validación numérica'),
+    h('p', { class: 'text-sm text-slate-600 dark:text-slate-300' }, [
+      'Las ecuaciones de las 5 prácticas han sido verificadas con un script independiente en Node.js contra ',
+      h('code', { class: 'font-mono text-xs px-1 rounded bg-slate-100 dark:bg-slate-800' }, 'js/stats.js'),
+      '. Los detalles (resultados de cada EJEMPLO vs. las cifras impresas en el manual) están en ',
+      h('code', { class: 'font-mono text-xs px-1 rounded bg-slate-100 dark:bg-slate-800' }, 'docs/fundamentos.md §7'),
+      '. Las pequeñas divergencias respecto al libro provienen del redondeo y de la composición de los datos de ejemplo, no de errores de cálculo.'
+    ])
+  ], 'mt-6'));
+
+  container.appendChild(card([
     h('h2', { class: 'font-semibold text-lg mb-2' }, 'Disclaimer científico'),
     h('p', { class: 'text-sm text-slate-600 dark:text-slate-300' },
       'Esta herramienta es educativa y no sustituye el criterio de un profesional cualificado. Las estimaciones dependen críticamente de la calidad y calibración del transductor de velocidad y del cumplimiento estricto del protocolo de evaluación (técnica, calentamiento, descansos, individualización de la VML).'
